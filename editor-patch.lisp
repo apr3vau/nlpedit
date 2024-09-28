@@ -1,6 +1,9 @@
 (in-package editor)
 
-(defadvice (font-lock-fontify-region nlpedit:nlpedit :around) (start end &optional verbose)
+(defadvice (font-lock-fontify-region
+            nlpedit:nlpedit :around
+            :documentation "Don't remove old faces under NLP mode")
+    (start end &optional verbose)
   (let ((buffer (point-buffer start)))
     (if (buffer-minor-mode buffer "NLP")
         (progn
@@ -20,7 +23,17 @@
             (message "Fontifying ~s...done" (buffer-name buffer))))
       (call-next-advice start end verbose))))
 
-(defadvice (font-lock-apply-highlight nlpedit:nlpedit :around) (start end face)
+(defadvice (font-lock-apply-highlight
+            nlpedit:nlpedit :around
+            :documentation "Don't check boring face under NLP mode")
+    (start end face)
   (if (buffer-minor-mode (point-buffer start) "NLP")
       (put-text-property start end 'face face :modification nil)
     (call-next-advice start end face)))
+
+;; Automatically activate NLP Mode
+(defun activate-nlp-hook-function (buffer type)
+  (declare (ignore type))
+  (setf (buffer-minor-mode buffer "NLP") t))
+
+(add-global-hook text-mode-hook #'activate-nlp-hook-function)

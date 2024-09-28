@@ -5,7 +5,7 @@
 (defparameter *src-dir* (merge-pathnames "runtime/" (asdf:system-source-directory :nlpedit)))
 (change-directory *src-dir*)
 
-#-win32
+#-windows
 (setf (environment-variable "PYTHONHOME") (namestring (truename "./py/"))
       (environment-variable "PYTHONPATH") (namestring (truename "./py/")))
 

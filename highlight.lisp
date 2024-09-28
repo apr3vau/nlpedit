@@ -86,37 +86,6 @@ Send the region to the fontify process"
   (mp:process-send (ensure-fontify-process)
                    (list (editor:copy-point start) (editor:copy-point end))))
 
-;; Configure
-
-(capi:define-interface nlp-configure-interface ()
-  ()
-  (:panes
-   (analysing-option
-    capi:option-pane
-    :title "Analysing Method:" :title-position :left
-    :items (analysing-methods) :selected-item *analysing-method*
-    :print-function #'string-capitalize
-    :selection-callback (lambda (data itf)
-                          (with-slots (annotating-option configure-layout) itf
-                            (setf *analysing-method* data
-                                  (capi:collection-items annotating-option) (annotating-methods data)
-                                  *annotating-method* (car (annotating-methods data))
-                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*))))))
-   (annotating-option
-    capi:option-pane
-    :title "Annotating Method:" :title-position :left
-    :items (annotating-methods *analysing-method*) :selected-item *annotating-method*
-    :print-function #'string-capitalize
-    :selection-callback (lambda (data itf)
-                          (with-slots (configure-layout) itf
-                            (setf *annotating-method* data
-                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*)))))))
-  (:layouts
-   (main-layout
-    capi:column-layout
-    '(analysing-option annotating-option configure-layout))
-   (configure-layout capi:column-layout (list (make-configure-layout *analysing-method* *annotating-method*)))))
-
 ;; Editor Mode
 
 (editor:defmode "NLP"
@@ -139,4 +108,6 @@ Send the region to the fontify process"
   (declare (ignore p))
   (capi:popup-confirmer
    (make-instance 'nlp-configure-interface)
-   "Configure NLP Mode" :cancel-button nil))
+   "Configure NLP Mode" :cancel-button nil)
+  (dolist (itf (capi:collect-interfaces 'nlp-editor))
+    (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer")))

@@ -12,7 +12,7 @@
                                       (string-downcase name)
                                       #+windows 16
                                       #+unix 48)
-                              (sys:current-directory))))))
+                              (get-working-directory))))))
 
 ;; Colors
 

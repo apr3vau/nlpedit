@@ -1,5 +1,7 @@
 (in-package nlpedit)
 
+;; Configuration fields
+
 (defvar *font-family*
   #+windows "Arial"
   #+mac ".AppleSystemUIFont"
@@ -8,6 +10,31 @@
 
 (defparameter *font-size* 14
   "Font size of NLP Editor pane")
+
+(defparameter *font-weight* :regular
+  "Font weight of NLP Editor pane")
+
+(defparameter *font-slant* :roman
+  "Font slant of NLP Editor pane")
+
+(defun make-font-describe-string ()
+  (apply #'string-append
+         "Font: "
+         *font-family* ", "
+         (princ-to-string *font-size*) "pt, "
+         (string-capitalize *font-weight*)
+         (when (eq *font-slant* :italic) (list ", Italic"))))
+
+(defun update-font ()
+  (dolist (itf (capi:collect-interfaces 'nlp-editor))
+    (capi:apply-in-pane-process
+     itf
+     (lambda ()
+       (setf (capi:simple-pane-font (slot-value itf 'editor))
+             (gp:make-font-description :family *font-family* :size *font-size*
+                                       :weight *font-weight* :slant *font-slant*))))))
+
+;; Methods
 
 (defun file-new (itf) (capi:call-editor (slot-value itf 'editor) "New Buffer"))
 
@@ -39,8 +66,50 @@
         (editor::write-da-file (editor:window-buffer (capi:editor-window editor))
                                (or (probe-file path) (translate-logical-pathname path)))))))
 
-(setf capi:*editor-cursor-active-style* :left-bar)
-;; (setf capi:*editor-cursor-active-style* :inverse)
+;; Interface class definition
+
+(capi:define-interface nlp-configure-interface ()
+  ()
+  (:panes
+   (font-option
+    capi:push-button
+    :title (make-font-describe-string) :title-position :left
+    :text "Choose Font"
+    :callback-type :element
+    :callback (lambda (self)
+                (when-let (font (capi:prompt-for-font "Select a Font"))
+                  (let ((desc (gp:font-description font)))
+                    (setf *font-family* (gp:font-description-attribute-value desc :family)
+                          *font-size* (gp:font-description-attribute-value desc :size)
+                          *font-weight* (gp:font-description-attribute-value desc :weight)
+                          *font-slant* (gp:font-description-attribute-value desc :slant)
+                          (capi:titled-pane-title self) (make-font-describe-string))
+                    (update-font)))))
+   (analysing-option
+    capi:option-pane
+    :title "Analysing Method:" :title-position :left
+    :items (analysing-methods) :selected-item *analysing-method*
+    :print-function #'string-capitalize
+    :selection-callback (lambda (data itf)
+                          (with-slots (annotating-option configure-layout) itf
+                            (setf *analysing-method* data
+                                  (capi:collection-items annotating-option) (annotating-methods data)
+                                  *annotating-method* (car (annotating-methods data))
+                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*))))))
+   (annotating-option
+    capi:option-pane
+    :title "Annotating Method:" :title-position :left
+    :items (annotating-methods *analysing-method*) :selected-item *annotating-method*
+    :print-function #'string-capitalize
+    :selection-callback (lambda (data itf)
+                          (with-slots (configure-layout) itf
+                            (setf *annotating-method* data
+                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*)))))))
+  (:layouts
+   (main-layout
+    capi:column-layout
+    '(font-option analysing-option annotating-option configure-layout))
+   (configure-layout capi:column-layout (list (make-configure-layout *analysing-method* *annotating-method*)))))
 
 (capi:define-interface nlp-editor ()
   ()
@@ -49,7 +118,8 @@
     capi:editor-pane
     :text "Welcome to the NLP Editor!"
     :buffer-modes '("Text" "NLP")
-    :font (gp:make-font-description :family *font-family* :size *font-size*)
+    :font (gp:make-font-description :family *font-family* :size *font-size*
+                                    :weight *font-weight* :slant *font-slant*)
     :wrap-style :split-on-space
     :pane-menu nil)
    )
@@ -85,10 +155,11 @@
         :enabled-function #'capi:active-pane-deselect-all-p)))
      (:component
       (("Settings..." :name 'settings
-        :callback (lambda (itf) (declare (ignore itf))
+        :callback (lambda (itf)
                     (capi:popup-confirmer
                      (make-instance 'nlp-configure-interface)
-                     "Settings" :cancel-button nil))))))
+                     "Settings" :cancel-button nil)
+                    (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer"))))))
     :callback-type :interface)
    (window-menu
     "Window"
@@ -122,6 +193,7 @@
   (register-images)
   (loop for i in (analysing-methods)
         do (init-analysing-method *nlp-implementation* i))
+  (setf capi:*editor-cursor-active-style* :left-bar)
   (capi:display (make-instance 'nlp-editor)))
 
 (export 'main)
