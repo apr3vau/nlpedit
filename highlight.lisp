@@ -44,7 +44,7 @@ Listening for EDITOR:POINTs (START END) to fontify"
                  until (null new-start)
                  do (setf start (if (editor:point> start new-start) new-start start)
                           end (if (editor:point< end new-end) new-end end)))
-           (when-let (sentences (parse-sentences *nlp-implementation* *analysing-method* (editor:points-to-string start end)))
+           (when-let (sentences (analyse-sentences *nlp-implementation* *analysing-method* (editor:points-to-string start end)))
              (setf sentences (annotate-sentences *analysing-method* *annotating-method* sentences))
              (fontify-by-words start end (mapcan #'identity sentences)))))
 
@@ -111,3 +111,45 @@ Send the region to the fontify process"
    "Configure NLP Mode" :cancel-button nil)
   (dolist (itf (capi:collect-interfaces 'nlp-editor))
     (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer")))
+
+;; Editor Patch
+
+(in-package editor)
+
+(defadvice (font-lock-fontify-region
+            nlpedit:nlpedit :around
+            :documentation "Don't remove old faces under NLP mode")
+    (start end &optional verbose)
+  (let ((buffer (point-buffer start)))
+    (if (buffer-minor-mode buffer "NLP")
+        (progn
+          (when verbose
+            (message "Fontifying ~s..." (buffer-name buffer)))
+          (with-buffer-locked (buffer :for-modification nil)
+            (let ((syntactically-function
+                   (or (variable-value 'font-lock-fontify-syntactically-region-function
+                                       :current buffer)
+                       'lisp-font-lock-fontify-syntactically-region)))
+              (funcall syntactically-function start end))
+            (let ((keyword-function (or (variable-value 'font-lock-fontify-keywords-region-function
+                                                        :current buffer)
+                                        'lisp-font-lock-fontify-keywords-region)))
+              (funcall keyword-function start end)))
+          (when verbose
+            (message "Fontifying ~s...done" (buffer-name buffer))))
+      (call-next-advice start end verbose))))
+
+(defadvice (font-lock-apply-highlight
+            nlpedit:nlpedit :around
+            :documentation "Don't check boring face under NLP mode")
+    (start end face)
+  (if (buffer-minor-mode (point-buffer start) "NLP")
+      (put-text-property start end 'face face :modification nil)
+    (call-next-advice start end face)))
+
+;; Automatically activate NLP Mode
+(defun activate-nlp-hook-function (buffer type)
+  (declare (ignore type))
+  (setf (buffer-minor-mode buffer "NLP") t))
+
+(add-global-hook text-mode-hook #'activate-nlp-hook-function)

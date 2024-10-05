@@ -71,6 +71,12 @@
 (capi:define-interface nlp-configure-interface ()
   ()
   (:panes
+   (language-option
+    capi:option-pane
+    :title "Language:" :title-position :left
+    :items *languages* :print-function #'string-capitalize
+    :callback-type :data
+    :selection-callback (lambda (data) (setf *language* data) (save-settings)))
    (font-option
     capi:push-button
     :title (make-font-describe-string) :title-position :left
@@ -84,7 +90,8 @@
                           *font-weight* (gp:font-description-attribute-value desc :weight)
                           *font-slant* (gp:font-description-attribute-value desc :slant)
                           (capi:titled-pane-title self) (make-font-describe-string))
-                    (update-font)))))
+                    (update-font)
+                    (save-settings)))))
    (analysing-option
     capi:option-pane
     :title "Analysing Method:" :title-position :left
@@ -95,7 +102,10 @@
                             (setf *analysing-method* data
                                   (capi:collection-items annotating-option) (annotating-methods data)
                                   *annotating-method* (car (annotating-methods data))
-                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*))))))
+                                  (capi:layout-description configure-layout)
+                                  (list (make-configure-layout
+                                         *nlp-implementation* *analysing-method* *annotating-method*)))
+                            (save-settings))))
    (annotating-option
     capi:option-pane
     :title "Annotating Method:" :title-position :left
@@ -104,12 +114,17 @@
     :selection-callback (lambda (data itf)
                           (with-slots (configure-layout) itf
                             (setf *annotating-method* data
-                                  (capi:layout-description configure-layout) (list (make-configure-layout *analysing-method* *annotating-method*)))))))
+                                  (capi:layout-description configure-layout)
+                                  (list (make-configure-layout
+                                         *nlp-implementation* *analysing-method* *annotating-method*)))
+                            (save-settings)))))
   (:layouts
    (main-layout
     capi:column-layout
-    '(font-option analysing-option annotating-option configure-layout))
-   (configure-layout capi:column-layout (list (make-configure-layout *analysing-method* *annotating-method*)))))
+    '(language-option font-option analysing-option annotating-option configure-layout))
+   (configure-layout
+    capi:column-layout
+    (list (make-configure-layout *nlp-implementation* *analysing-method* *annotating-method*)))))
 
 (capi:define-interface nlp-editor ()
   ()
@@ -185,14 +200,8 @@
 
 (defun main ()
   (cd (directory-namestring (lisp-image-name)))
-  #-win32
-  (setf (environment-variable "PYTHONHOME") (truename "./py/")
-        (environment-variable "PYTHONPATH") (truename "./py/"))
-  (setf (py4cl2:config-var 'py4cl2:pycmd) (namestring (truename #+win32 "./py/python.exe"
-                                                                #+unix "./py/bin/python3.10")))
   (register-images)
-  (loop for i in (analysing-methods)
-        do (init-analysing-method *nlp-implementation* i))
+  (load-settings)
   (setf capi:*editor-cursor-active-style* :left-bar)
   (capi:display (make-instance 'nlp-editor)))
 

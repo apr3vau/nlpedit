@@ -1,3 +1,5 @@
+;; PY4CL2 Patch
+
 (in-package :uiop/launch-program)
 
 (defclass process-info ()
@@ -169,39 +171,42 @@ By default this is is set to (CONFIG-VAR 'PYCMD)
                    (#\space (write-string "\\ "))
                    (t (write-char ch)))))))
       (declare (ignorable (function bash-escape-string)))
-      (loop :until (python-alive-p)
-            :do (setq *python*
-                      #+(or os-windows windows)
-                      (uiop:launch-program
-                       (concatenate 'string
-                                    "set PYTHONIOENCODING=utf8 && "
-                                    command " -u ./py4cl.py ./")
-                       :stream :lock
-                       :input :stream
-                       :output :stream
-                       :error-output :stream)
-                      #+unix
-                      (uiop:launch-program
-                       (concatenate 'string
-                                    (bash-escape-string command) " "
-                                    (bash-escape-string (namestring (truename "./py4cl.py"))) " "
-                                    (namestring (truename "./")))
-                       :stream :lock
-                       :input :stream
-                       :output :stream
-                       :error-output :stream))
-                (sleep 0.1)
-                (unless (python-alive-p)
-                  (let ((*python-startup-error* (or (ignore-errors
-                                                      (read-stream-content-into-string
-                                                       (uiop:process-info-error-output *python*)))
-                                                    "Unable to fetch more error details on ECL")))
-                    (cerror "Provide another path (setf (config-var 'pycmd) ...)"
-                            'python-process-startup-error :command command))
-                  (format t "~&Provide the path to python binary to use (eg python): ")
-                  (let ((cmd (read-line)))
-                    (setf (config-var 'pycmd) cmd)
-                    (setf command cmd)))))
+      (let ((temp (hcl:create-temp-file :file-type "py")))
+        (with-open-file (out temp
+                             :direction :output
+                             :if-exists :supersede)
+          (princ *python-code* out))
+        (loop :until (python-alive-p)
+              :do (setq *python*
+                        #+(or os-windows windows)
+                        (uiop:launch-program
+                         (format nil "set PYTHONIOENCODING=utf8 && ~A -u ~A ./" command temp)
+                         :stream :lock
+                         :input :stream
+                         :output :stream
+                         :error-output :stream)
+                        #+unix
+                        (uiop:launch-program
+                         (concatenate 'string
+                                      (bash-escape-string command) " "
+                                      (bash-escape-string (namestring temp)) " "
+                                      (namestring (truename "./")))
+                         :stream :lock
+                         :input :stream
+                         :output :stream
+                         :error-output :stream))
+                  (sleep 0.1)
+                  (unless (python-alive-p)
+                    (let ((*python-startup-error* (or (ignore-errors
+                                                        (read-stream-content-into-string
+                                                         (uiop:process-info-error-output *python*)))
+                                                      "Unable to fetch more error details on ECL")))
+                      (cerror "Provide another path (setf (config-var 'pycmd) ...)"
+                              'python-process-startup-error :command command))
+                    (format t "~&Provide the path to python binary to use (eg python): ")
+                    (let ((cmd (read-line)))
+                      (setf (config-var 'pycmd) cmd)
+                      (setf command cmd))))))
     (unless *py4cl-tests*
       (setq *python-output-thread*
             (bt:make-thread
@@ -220,15 +225,17 @@ By default this is is set to (CONFIG-VAR 'PYCMD)
                                     (bt:wait-on-semaphore *python-output-semaphore*))
                                   (in outer (next-iteration)))
                                 (read-char py-out nil)))
-                       (simple-error (condition)
-                         (unless (and (member :ccl *features*)
+                       (simple-error (condition) nil
+                         #|(unless (and (member :ccl *features*)
                                       (search "is private to" (format nil "~A" condition)))
                            (error "~S~%  ~A~%occured while inside *python-output-thread* ~A"
-                                  condition condition *python-output-thread*)))
-                       (stream-error (condition)
-                         (unless (member :abcl *features*)
+                                  condition condition *python-output-thread*))|#
+                         )
+                       (stream-error (condition) nil
+                         #|(unless (member :abcl *features*)
                            (error "~S~%  ~A~%occured while inside *python-output-thread* ~A"
-                                  condition condition *python-output-thread*))))
+                                  condition condition *python-output-thread*))|#
+                         ))
                      (when char (write-char char)))))))))
     (cond ((and (numpy-installed-p)
                 (not (member :arrays *internal-features*)))
@@ -238,3 +245,69 @@ By default this is is set to (CONFIG-VAR 'PYCMD)
            (removef *internal-features* :arrays)))
     (incf *current-python-process-id*)
     (apply #'raw-pyexec *additional-init-codes*)))
+
+;; Python Installation
+
+(in-package nlpedit)
+
+(defvar *python-url*
+  #+mswindows "https://github.com/apr3vau/nlpedit/releases/download/python/py310-win.zip"
+  #+darwin "https://github.com/apr3vau/nlpedit/releases/download/python/py310-mac.zip")
+
+(defparameter *required-python-packages*
+  (list "stanza==1.9.2" "transformers==4.45.1" "numpy==1.25.2"))
+
+(defun ensure-python-packages ()
+  (loop with site = (merge-pathnames #+mswindows "py/Lib/site-packages/"
+                                     #+darwin "py/lib/python3.10/site-packages/"
+                                     *resource-directory*)
+        for package in *required-python-packages*
+        for (name version) = (split-sequence '(#\> #\< #\=) package :coalesce-separators t)
+        for dir = (merge-pathnames (format nil "~A-~A.dist-info" name version) site)
+        unless (probe-file dir)
+          do (let ((text (make-instance 'capi:title-pane :text (format nil "Installing necessary package: ~A..." name))))
+               (mp:process-run-function
+                "Install Python Package" ()
+                (lambda () 
+                  (unwind-protect
+                      #+mswindows
+                    (sys:call-system (list "powershell.exe"
+                                           (format nil "~A -m pip install ~A --target ~A --upgrade"
+                                                   (namestring (merge-pathnames "py/python.exe" *resource-directory*))
+                                                   package
+                                                   (namestring site))))
+                    #+darwin
+                    (sys:call-system (list (namestring (merge-pathnames "py/bin/pip3" *resource-directory*))
+                                           "install" package "--target" (namestring site) "--upgrade"))
+                    (capi:apply-in-pane-process text #'capi:abort-dialog))))
+               (capi:display-dialog
+                (make-instance 'capi:interface :layout (make-instance 'capi:simple-layout :description (list text)))))
+        always (probe-file dir)))
+
+(defun ensure-python-installed ()
+  (let ((dir (merge-pathnames "py/" *resource-directory*)))
+    (unless (probe-file dir)
+      (let ((zip-destination (merge-pathnames "python.zip" *resource-directory*))
+            (text (make-instance 'capi:title-pane :text "Downloading Python...")))
+        (mp:process-run-function
+         "Download NLP Model" ()
+         (lambda ()
+           (unwind-protect
+               (progn
+                 (unless (probe-file zip-destination)
+                   (dex:fetch *python-url* zip-destination))
+                 #+mswindows
+                 (sys:call-system (list "powershell.exe"
+                                        (format nil "Expand-Archive -Force -Path ~A -DestinationPath ~A"
+                                                (namestring zip-destination)
+                                                (namestring *resource-directory*))))
+                 #+darwin
+                 (sys:call-system (list "/usr/bin/unzip" (namestring zip-destination) "-d" (namestring *resource-directory*)))
+                 #+darwin
+                 (sys:run-shell-command (list (config-var 'py4cl2:pycmd) "-m" "ensurepip")))
+             (capi:apply-in-pane-process text #'capi:abort-dialog))))
+        (capi:display-dialog
+         (make-instance 'capi:interface :layout (make-instance 'capi:simple-layout :description (list text))))))
+    (prog1 (and (probe-file dir)
+                (ensure-python-packages))
+      (pystart))))

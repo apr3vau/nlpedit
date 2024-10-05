@@ -10,6 +10,14 @@
 
 (asdf:load-system :nlpedit)
 
-(deliver #'nlpedit:main "~/common-lisp/nlpedit/runtime/nlpedit" 0
+#|(deliver #'nlpedit:main
+         #+mswindows "~/common-lisp/nlpedit/nlpedit"
+         #+darwin (create-macos-application-bundle "~/common-lisp/nlpedit/nlpedit.app")
+         0
          :interface :capi
-         :console :input)
+         :console :input)|#
+
+(deliver #'nlpedit:main "~/common-lisp/nlpedit/nlpedit" 0
+         :interface :capi
+         :console :input
+         :split nil)
