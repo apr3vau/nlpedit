@@ -108,3 +108,9 @@
 
 (defmethod editor::text-pane-background-dark-p ((pane color-choice-output))
   (capi:top-level-interface-dark-mode-p (capi:element-interface pane)))
+
+(defun extract-zip (file destination)
+  #+mswindows
+  (sys:run-shell-command (list "cmd" "/c" "powershell.exe" "Expand-Archive" (namestring file) (namestring destination)))
+  #+darwin
+  (sys:run-shell-command (list "/usr/bin/unzip" (namestring file) "-d" (namestring destination))))

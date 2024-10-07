@@ -296,13 +296,9 @@ By default this is is set to (CONFIG-VAR 'PYCMD)
                (progn
                  (unless (probe-file zip-destination)
                    (dex:fetch *python-url* zip-destination))
-                 #+mswindows
-                 (sys:call-system (list "powershell.exe"
-                                        (format nil "Expand-Archive -Force -Path ~A -DestinationPath ~A"
-                                                (namestring zip-destination)
-                                                (namestring *resource-directory*))))
-                 #+darwin
-                 (sys:call-system (list "/usr/bin/unzip" (namestring zip-destination) "-d" (namestring *resource-directory*)))
+                 (extract-zip zip-destination *resource-directory*)
+                 ;; On macOS we have ensurepip inside the package but without pip;
+                 ;; Instead we directly have pip on Windows
                  #+darwin
                  (sys:run-shell-command (list (config-var 'py4cl2:pycmd) "-m" "ensurepip")))
              (capi:apply-in-pane-process text #'capi:abort-dialog))))
