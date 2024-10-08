@@ -8,16 +8,19 @@
   (when (probe-file quicklisp-init)
     (load quicklisp-init)))
 
+(set-default-character-element-type 'character)
+(pushnew :utf-8 system:*specific-valid-file-encodings*)
+
 (asdf:load-system :nlpedit)
 
-#|(deliver #'nlpedit:main
-         #+mswindows "~/common-lisp/nlpedit/nlpedit"
+(deliver #'nlpedit:main
+         #+mswindows "~/common-lisp/nlpedit/nlpedit.exe"
          #+darwin (create-macos-application-bundle "~/common-lisp/nlpedit/nlpedit.app")
          0
          :interface :capi
-         :console :input)|#
+         :console :input)
 
-(deliver #'nlpedit:main "~/common-lisp/nlpedit/nlpedit" 0
+#|(deliver #'nlpedit:main "~/common-lisp/nlpedit/nlpedit" 0
          :interface :capi
          :console :input
-         :split nil)
+         :split nil)|#

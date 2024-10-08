@@ -39,11 +39,12 @@ WORDs must match the content within the region."
 
 Listening for EDITOR:POINTs (START END) to fontify"
   (loop with mailbox = (mp:process-mailbox (mp:get-current-process))
-        for (start end) = (mp:mailbox-read mailbox "Waiting for points (START END) to fontify")
+        for (start end) = (mapcar #'editor:copy-point
+                                  (mp:mailbox-read mailbox "Waiting for points (START END) to fontify"))
         do (loop for (new-start new-end) = (mp:mailbox-read mailbox "Waiting for new points within delay" *fontify-delay*)
                  until (null new-start)
-                 do (setf start (if (editor:point> start new-start) new-start start)
-                          end (if (editor:point< end new-end) new-end end)))
+                 do (setf start (editor:copy-point (if (editor:point> start new-start) new-start start))
+                          end (editor:copy-point (if (editor:point< end new-end) new-end end))))
            (when-let (sentences (analyse-sentences *nlp-implementation* *analysing-method* (editor:points-to-string start end)))
              (setf sentences (annotate-sentences *analysing-method* *annotating-method* sentences))
              (fontify-by-words start end (mapcan #'identity sentences)))))
@@ -109,6 +110,8 @@ Send the region to the fontify process"
   (capi:popup-confirmer
    (make-instance 'nlp-configure-interface)
    "Configure NLP Mode" :cancel-button nil)
+  (if (install-dependencies) (save-settings) (restore-settings))
+  (update-font)
   (dolist (itf (capi:collect-interfaces 'nlp-editor))
     (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer")))
 

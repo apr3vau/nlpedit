@@ -76,7 +76,14 @@
     :title "Language:" :title-position :left
     :items *languages* :print-function #'string-capitalize
     :callback-type :data
-    :selection-callback (lambda (data) (setf *language* data) (save-settings)))
+    :selection-callback (lambda (data) (setf *language* data)))
+   (model-quality-option
+    capi:option-pane
+    :title "Model Quality:" :title-position :left
+    :items *model-qualities* :selected-item *model-quality*
+    :print-function #'string-capitalize
+    :callback-type :data
+    :selection-callback (lambda (data) (setf *model-quality* data)))
    (font-option
     capi:push-button
     :title (make-font-describe-string) :title-position :left
@@ -89,9 +96,7 @@
                           *font-size* (gp:font-description-attribute-value desc :size)
                           *font-weight* (gp:font-description-attribute-value desc :weight)
                           *font-slant* (gp:font-description-attribute-value desc :slant)
-                          (capi:titled-pane-title self) (make-font-describe-string))
-                    (update-font)
-                    (save-settings)))))
+                          (capi:titled-pane-title self) (make-font-describe-string))))))
    (analysing-option
     capi:option-pane
     :title "Analysing Method:" :title-position :left
@@ -104,8 +109,7 @@
                                   *annotating-method* (car (annotating-methods data))
                                   (capi:layout-description configure-layout)
                                   (list (make-configure-layout
-                                         *nlp-implementation* *analysing-method* *annotating-method*)))
-                            (save-settings))))
+                                         *nlp-implementation* *analysing-method* *annotating-method*))))))
    (annotating-option
     capi:option-pane
     :title "Annotating Method:" :title-position :left
@@ -116,12 +120,11 @@
                             (setf *annotating-method* data
                                   (capi:layout-description configure-layout)
                                   (list (make-configure-layout
-                                         *nlp-implementation* *analysing-method* *annotating-method*)))
-                            (save-settings)))))
+                                         *nlp-implementation* *analysing-method* *annotating-method*)))))))
   (:layouts
    (main-layout
     capi:column-layout
-    '(language-option font-option analysing-option annotating-option configure-layout))
+    '(language-option font-option model-quality-option analysing-option annotating-option configure-layout))
    (configure-layout
     capi:column-layout
     (list (make-configure-layout *nlp-implementation* *analysing-method* *annotating-method*)))))
@@ -174,6 +177,8 @@
                     (capi:popup-confirmer
                      (make-instance 'nlp-configure-interface)
                      "Settings" :cancel-button nil)
+                    (if (install-dependencies) (save-settings) (restore-settings))
+                    (update-font)
                     (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer"))))))
     :callback-type :interface)
    (window-menu

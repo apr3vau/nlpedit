@@ -8,11 +8,14 @@
 (defvar *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
 (defvar *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
 
+(defvar *model-quality* 'default)
+(defparameter *model-qualities* '(default fast accurate))
+
 #+darwin
 (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
       (environment-variable "PYTHONPATH") (namestring (merge-pathnames "py/" *resource-directory*)))
 (setf (config-var 'py4cl2:pycmd) (namestring (merge-pathnames #+mswindows "py/python.exe"
-                                                              #+darwin "py/bin/python.exe"
+                                                              #+darwin "py/bin/python3.10"
                                                               *resource-directory*)))
 
 (defvar *nlp-implementation* 'stanza)
@@ -27,9 +30,7 @@
 
 (defun analysing-methods ()
   "Get all analysing methods (Dependency parsing, part-of-speech, etc.)"
-  (delete-duplicates
-   (mapcar (lambda (i) (second (second (method-specializers i))))
-           (generic-function-methods #'analyse-sentences))))
+  '(dependency part-of-speech named-entity-recognition))
 
 (defun annotating-methods (analysing-method)
   "Get all annotating methods for ANALYSING-METHOD"
@@ -45,7 +46,7 @@
                        :if-exists :supersede
                        :if-does-not-exist :create)
     (loop for sym in '(*language*
-                       *nlp-implementation* *analysing-method* *annotating-method*
+                       *model-quality* *nlp-implementation* *analysing-method* *annotating-method*
                        *font-family* *font-size* *font-weight* *font-slant*
                        *specific-types-annotating-style*
                        *specific-types-annotating-dependency-types*
@@ -53,22 +54,32 @@
           nconc (list sym (symbol-value sym)) into r
           finally (prin1 r out))))
 
+(defun restore-settings ()
+  (when (probe-file *settings-file*)
+    (let ((plist (with-open-file (in *settings-file*) (read in))))
+      (loop for (sym val) on plist by #'cddr
+            do (setf (symbol-value sym) val)))))
+
 (defun load-settings ()
   (ensure-directories-exist *resource-directory*)
+  #+darwin
+  (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
+        (environment-variable "PYTHONPATH") (namestring (merge-pathnames "py/" *resource-directory*)))
   (setf (config-var 'py4cl2:pycmd) (namestring (merge-pathnames #+mswindows "py/python.exe"
-                                                                #+darwin "py/bin/python.exe"
+                                                                #+darwin "py/bin/python3.10"
                                                                 *resource-directory*)))
   (handler-case
       (if (probe-file *settings-file*)
-          (let ((plist (with-open-file (in *settings-file*) (read in))))
-            (loop for (sym val) on plist by #'cddr
-                  do (setf (symbol-value sym) val)))
+          (restore-settings)
         (progn
-          (init-implementation *nlp-implementation*)
-          (capi:popup-confirmer (make-instance 'nlp-configure-interface) "Setup")
-          (dolist (method (analysing-methods))
-            (setf (model-name *nlp-implementation* method) (model-name *nlp-implementation* method)))
-          (save-settings)))
+          (capi:popup-confirmer
+           (make-instance 'nlp-configure-interface) "Setup"
+           :cancel-button nil)
+          (unless (install-dependencies)
+            (capi:display-message "Dependency installation failed~%The application cannot continue.")
+            (quit))
+          (save-settings)
+          (init-analysing-method *nlp-implementation* *analysing-method*)))
     (error (e)
       (if (delivered-image-p)
         (progn
@@ -81,15 +92,6 @@
 (defstruct word id text head upos deprel ner foreground background)
 
 ;; Generic functions
-
-(defgeneric model-name (implementation analysing-method))
-(defgeneric all-model-names (implementation analysing-method))
-(defgeneric (setf model-name) (value implementation analysing-method))
-
-(defgeneric init-implementation (implementation)
-  (:documentation "Initialize the implementation.
-
-You can prompt and set initial preferrences in this step."))
 
 (defgeneric init-analysing-method (implementation analysing-method)
   (:documentation "Initialization function for NLP method METHOD of IMPLEMENTATION
@@ -128,14 +130,14 @@ Defining method for this to enable method-specific configuration via GUI")
                          for word = (car sub)
                          for deprel = (word-deprel word)
                          do (cond ((deprel-member deprel '("nsubj" "csubj"))
-                                   (setf (word-foreground word) 'red2)
-                                   (process sub 'red1))
+                                   (setf (word-foreground word) 'emphasis-red)
+                                   (process sub 'red))
                                   ((deprel-member deprel '("obj" "iobj" "obl"))
-                                   (setf (word-foreground word) 'cyan1)
-                                   (process sub 'blue1))
+                                   (setf (word-foreground word) 'emphasis-blue)
+                                   (process sub 'blue))
                                   ((deprel-member deprel '("xcomp" "ccomp"))
-                                   (setf (word-foreground word) 'yellow2)
-                                   (process sub 'yellow1))
+                                   (setf (word-foreground word) 'emphasis-yellow)
+                                   (process sub 'yellow))
                                   ((deprel-member deprel '(list "parataxis" "orphan" "dislocated" "reparandum"
                                                                 "compound" "flat" "fixed" "goeswith"
                                                                 "conj"
@@ -145,7 +147,7 @@ Defining method for this to enable method-specific configuration via GUI")
                                   ((deprel= deprel "punct") t)
                                   (t (setf (word-foreground word) default-color)
                                      (process sub default-color))))))
-          (setf (word-foreground (car tree)) 'yellow2)
+          (setf (word-foreground (car tree)) 'emphasis-yellow)
           (process tree nil)))))
   sentences)
 
@@ -163,13 +165,13 @@ Defining method for this to enable method-specific configuration via GUI")
                          for word = (car sub)
                          for deprel = (word-deprel word)
                          do (cond ((deprel-member deprel '("nsubj" "csubj"))
-                                   (setf (word-foreground word) 'red2)
+                                   (setf (word-foreground word) 'emphasis-red)
                                    (process sub))
                                   ((deprel-member deprel '("obj" "iobj" "obl"))
-                                   (setf (word-foreground word) 'blue1)
+                                   (setf (word-foreground word) 'emphasis-blue)
                                    (process sub))
                                   ((deprel-member deprel '("xcomp" "ccomp"))
-                                   (setf (word-foreground word) 'yellow2)
+                                   (setf (word-foreground word) 'emphasis-yellow)
                                    (process sub))
                                   ((deprel-member deprel '(list "parataxis" "orphan" "dislocated" "reparandum"
                                                                 "compound" "flat" "fixed" "goeswith"
@@ -179,7 +181,7 @@ Defining method for this to enable method-specific configuration via GUI")
                                    (process sub))
                                   ((deprel-member deprel '("punct" "discourse")) t)
                                   (t (process sub))))))
-          (setf (word-foreground (car tree)) 'yellow2)
+          (setf (word-foreground (car tree)) 'emphasis-yellow)
           (process tree)))))
   sentences)
 
@@ -199,7 +201,7 @@ Defining method for this to enable method-specific configuration via GUI")
                                                      (getf *specific-types-annotating-style* :foreground) color)))
           fg-option (make-instance
                      'capi:option-pane
-                     :items '(custom red brown yellow green cyan blue purple)
+                     :items '(custom nil red brown yellow green cyan blue purple)
                      :print-function #'string-capitalize
                      :callback-type :data
                      :selection-callback
@@ -254,8 +256,8 @@ Defining method for this to enable method-specific configuration via GUI")
 (defvar *specific-types-annotating-dependency-types* '("nsubj" "ccubj" "ccomp" "xcomp" "obj" "iobj"))
 
 (defvar *specific-types-annotating-style*
-  '(:background red2
-    :foreground nil))
+  '(:foreground light-red
+    :background nil))
 
 (defmethod make-configure-layout :around (impl analysing-method (annotating-method (eql 'specific-types)))
   (let* (fg-custom fg-option bg-custom bg-option)
@@ -267,7 +269,7 @@ Defining method for this to enable method-specific configuration via GUI")
                                                      (getf *specific-types-annotating-style* :foreground) color)))
           fg-option (make-instance
                      'capi:option-pane
-                     :items '(custom red brown yellow green cyan blue purple)
+                     :items '(custom nil red orange yellow green cyan blue purple)
                      :print-function #'string-capitalize
                      :callback-type :data
                      :selection-callback

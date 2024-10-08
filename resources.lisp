@@ -15,7 +15,6 @@
 
 (defun register-images ()
   (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings)
-        for name in '(add-file open-file save cut copy paste setting)
         do (gp:register-image-translation
             sym (make-instance 'gp:external-image :data (get sym :data) :type :png))))
 
@@ -30,89 +29,50 @@
                        deno))
     (color:make-rgb r g b (when a (+ (- a) 1)))))
 
-(color:define-color-alias 'dark-red1 (hex-to-spec "#620F0E"))
-(color:define-color-alias 'dark-blue1 (hex-to-spec "#0E1362"))
-(color:define-color-alias 'dark-green1 (hex-to-spec "#064419"))
-(color:define-color-alias 'dark-yellow1 (hex-to-spec "#62510E"))
-(color:define-color-alias 'dark-cyan1 (hex-to-spec "#003E49"))
-(color:define-color-alias 'dark-brown1 (hex-to-spec "#492100"))
-(color:define-color-alias 'dark-purple1 (hex-to-spec "#370049"))
+(color:define-color-alias 'red :brown3)
+(color:define-color-alias 'orange :chocolate1)
+(color:define-color-alias 'yellow (editor::create-dark-background-switchable-color :darkgoldenrod1 :gold))
+(color:define-color-alias 'green :darkolivegreen3)
+(color:define-color-alias 'cyan :mediumaquamarine)
+(color:define-color-alias 'blue :skyblue3)
+(color:define-color-alias 'purple (editor::create-dark-background-switchable-color :mediumorchid4 :plum3))
+(color:define-color-alias 'pink :pink2)
+(color:define-color-alias 'gray (editor::create-dark-background-switchable-color :gray47 :gray71))
 
-(color:define-color-alias 'dark-red2 (hex-to-spec "#7A3635"))
-(color:define-color-alias 'dark-blue2 (hex-to-spec "#373C8C"))
-(color:define-color-alias 'dark-green2 (hex-to-spec "#379051"))
-(color:define-color-alias 'dark-yellow2 (hex-to-spec "#8F7D37"))
-(color:define-color-alias 'dark-cyan2 (hex-to-spec "#3F7681"))
-(color:define-color-alias 'dark-brown2 (hex-to-spec "#72563F"))
-(color:define-color-alias 'dark-purple2 (hex-to-spec "#633572"))
+(color:define-color-alias 'light-red :indianred1)
+(color:define-color-alias 'light-orange :orange1)
+(color:define-color-alias 'light-yellow (editor::create-dark-background-switchable-color :orange1 :goldenrod1))
+(color:define-color-alias 'light-green (editor::create-dark-background-switchable-color :darkgreen :darkolivegreen1))
+(color:define-color-alias 'light-cyan (editor::create-dark-background-switchable-color :aquamarine4 :darkslategray1))
+(color:define-color-alias 'light-blue (editor::create-dark-background-switchable-color :slategray4 :cadetblue2))
+(color:define-color-alias 'light-purple :plum2)
+(color:define-color-alias 'light-pink (editor::create-dark-background-switchable-color :indianred1 :rosybrown1))
 
-(color:define-color-alias 'light-red1 (hex-to-spec "#FFC8C7"))
-(color:define-color-alias 'light-blue1 (hex-to-spec "#C7CAFF"))
-(color:define-color-alias 'light-green1 (hex-to-spec "#C7FFD9"))
-(color:define-color-alias 'light-yellow1 (hex-to-spec "#FFF4C7"))
-(color:define-color-alias 'light-cyan1 (hex-to-spec "#CCFFFF"))
-(color:define-color-alias 'light-brown1 (hex-to-spec "#FFDECB"))
-(color:define-color-alias 'light-purple1 (hex-to-spec "#EACCFF"))
+(color:define-color-alias 'dark-red :brown)
+(color:define-color-alias 'dark-orange :tan4)
+(color:define-color-alias 'dark-yellow :tan3)
+(color:define-color-alias 'dark-green :darkolivegreen4)
+(color:define-color-alias 'dark-cyan :aquamarine4)
+(color:define-color-alias 'dark-blue :skyblue4)
+(color:define-color-alias 'dark-purple :mediumorchid4)
+(color:define-color-alias 'dark-pink (editor::create-dark-background-switchable-color :lightpink4 :rosybrown))
 
-(color:define-color-alias 'light-red2 (hex-to-spec "#FA9F9D"))
-(color:define-color-alias 'light-blue2 (hex-to-spec "#8B91FA"))
-(color:define-color-alias 'light-green2 (hex-to-spec "#9DFABB"))
-(color:define-color-alias 'light-yellow2 (hex-to-spec "#FADA5C"))
-(color:define-color-alias 'light-cyan2 (hex-to-spec "#96F8FA"))
-(color:define-color-alias 'light-brown2 (hex-to-spec "#FABC96"))
-(color:define-color-alias 'light-purple2 (hex-to-spec "#D396FA"))
-
-(color:define-color-alias
- 'red1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-red1 'dark-red1))
-(color:define-color-alias
- 'blue1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-blue1 'dark-blue1))
-(color:define-color-alias
- 'green1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-green1 'dark-green1))
-(color:define-color-alias
- 'yellow1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-yellow1 'dark-yellow1))
-(color:define-color-alias
- 'cyan1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-cyan1 'dark-cyan1))
-(color:define-color-alias
- 'brown1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-brown1 'dark-brown1))
-(color:define-color-alias
- 'purple1 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-purple1 'dark-purple1))
-
-(color:define-color-alias
- 'red2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-red2 'dark-red2))
-(color:define-color-alias
- 'blue2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-blue2 'dark-blue2))
-(color:define-color-alias
- 'green2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-green2 'dark-green2))
-(color:define-color-alias
- 'yellow2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-yellow2 'dark-yellow2))
-(color:define-color-alias
- 'cyan2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-cyan2 'dark-cyan2))
-(color:define-color-alias
- 'brown2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-brown2 'dark-brown2))
-(color:define-color-alias
- 'purple2 (gp::create-switchable-color-with-predicate
-        'editor::text-pane-background-dark-p 'light-purple2 'dark-purple2))
+(color:define-color-alias 'emphasis-red (editor::create-dark-background-switchable-color 'dark-red 'light-red))
+(color:define-color-alias 'emphasis-orange (editor::create-dark-background-switchable-color 'dark-orange 'light-orange))
+(color:define-color-alias 'emphasis-yellow (editor::create-dark-background-switchable-color 'dark-yellow 'light-yellow))
+(color:define-color-alias 'emphasis-green (editor::create-dark-background-switchable-color 'dark-green 'light-green))
+(color:define-color-alias 'emphasis-cyan (editor::create-dark-background-switchable-color 'dark-cyan 'light-cyan))
+(color:define-color-alias 'emphasis-blue (editor::create-dark-background-switchable-color 'dark-blue 'light-blue))
+(color:define-color-alias 'emphasis-purple (editor::create-dark-background-switchable-color 'dark-purple 'light-purple))
+(color:define-color-alias 'emphasis-pink (editor::create-dark-background-switchable-color 'dark-pink 'light-pink))
 
 (defun part-of-speech-default-color (pos)
-  (cond ((string= pos "NOUN") 'red2)
-        ((string= pos "VERB") 'yellow2)
-        ((string= pos "ADJ") 'purple2)
-        ((string= pos "ADV") 'brown2)
-        ((string= pos "AUX") 'yellow1)
-        ((member pos '("NUM" "DET") :test #'string=) 'cyan2)
-        ((member pos '("PRON" "PROPN") :test #'string=) 'blue2)
-        ((member pos '("SCONJ" "CCONJ") :test #'string=) 'cyan1)
+  (cond ((string= pos "NOUN") 'red)
+        ((string= pos "VERB") 'yellow)
+        ((string= pos "ADJ") 'purple)
+        ((string= pos "ADV") 'brown)
+        ((string= pos "AUX") 'orange)
+        ((member pos '("NUM" "DET") :test #'string=) 'cyan)
+        ((member pos '("PRON" "PROPN") :test #'string=) 'blue)
+        ((member pos '("SCONJ" "CCONJ") :test #'string=) 'purple)
         (t nil)))

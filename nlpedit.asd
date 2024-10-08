@@ -1,7 +1,7 @@
 (defsystem nlpedit
   :author "April Lu"
   :license "0BSD"
-  :version "0.1.0"
+  :version "0.2.0"
   :depends-on (py4cl2 dexador cl-json cl-ppcre)
   :components ((:file "package")
                (:file "util")
@@ -9,5 +9,6 @@
                (:file "resources")
                (:file "generic")
                (:file "stanza")
+               (:file "installer")
                (:file "interface")
                (:file "highlight")))
