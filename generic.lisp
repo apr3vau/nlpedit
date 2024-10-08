@@ -74,7 +74,7 @@
         (progn
           (capi:popup-confirmer
            (make-instance 'nlp-configure-interface) "Setup"
-           :cancel-button nil)
+           :title "Setup NLP Editor" :cancel-button nil)
           (unless (install-dependencies)
             (capi:display-message "Dependency installation failed~%The application cannot continue.")
             (quit))

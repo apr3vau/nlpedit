@@ -28,6 +28,7 @@
   (let ((json-path (merge-pathnames (format nil "resources_~A.json" *stanza-resource-version*)
                                         *stanza-resources-directory*)))
     (unless (probe-file json-path)
+      (ensure-directories-exist json-path)
       (handler-case
           (bt:with-timeout (10)
             (dex:fetch (format nil "~A/resources_~A.json" *stanza-resource-url* *stanza-resource-version*) json-path))

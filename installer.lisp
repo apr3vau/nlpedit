@@ -124,7 +124,7 @@
              (make-instance 'capi:interface
                             :layout (make-instance 'capi:simple-layout :description (list list-panel)))
              "Installing Dependencies"
-             :ok-button nil)
+             :title "Installing Dependencies for NLP Editor" :ok-button nil)
           (declare (ignore result))
           (if okp t
             (progn
