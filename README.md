@@ -17,19 +17,19 @@ Please download and install if you don't have it.
 
 ### Natural Language Highlighting
 
-![Natural language highlighting](./core-dependencies-macos.png)
+![Natural language highlighting](./images/core-dependencies-macos.png)
 
 ### Configuration Panel
 
-![Configuration Panel](./pos.png)
+![Configuration Panel](./images/pos.png)
 
 ### Dependency Installer
 
-![Dependency Installer](./installer.png)
+![Dependency Installer](./images/installer.png)
 
 ### Light theme on Windows
 
-![Light theme on Windows](./core-dependencies-win.png)
+![Light theme on Windows](./images/core-dependencies-win.png)
 
 ## Acknowledgements
 
