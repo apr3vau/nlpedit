@@ -104,7 +104,7 @@
                        (lambda ()
                          (loop for i from 0
                                for func in functions
-                               do (setf (aref (aref name-status-array i) 1) "Processing...")
+                               do (setf (aref (aref name-status-array i) 1) "🕝 Processing...")
                                   (capi:apply-in-pane-process
                                    (capi:element-interface list-panel)
                                    #'capi:redisplay-collection-item list-panel (aref name-status-array i))

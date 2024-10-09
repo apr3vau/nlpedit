@@ -179,6 +179,7 @@
                      "Settings" :cancel-button nil)
                     (if (install-dependencies) (save-settings) (restore-settings))
                     (update-font)
+                    (init-analysing-method *nlp-implementation* *analysing-method*)
                     (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer"))))))
     :callback-type :interface)
    (window-menu

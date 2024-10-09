@@ -25,12 +25,14 @@
 (defun nlp-implementations ()
   "Get all NLP backend implementations."
   (delete-duplicates
-   (mapcar (lambda (i) (second (car (method-specializers i))))
+   (mapcar (lambda (i) (second (first (method-specializers i))))
            (generic-function-methods #'analyse-sentences))))
 
 (defun analysing-methods ()
   "Get all analysing methods (Dependency parsing, part-of-speech, etc.)"
-  '(dependency part-of-speech named-entity-recognition))
+  (delete-duplicates
+   (mapcar (lambda (i) (second (second (method-specializers i))))
+           (generic-function-methods #'analyse-sentences))))
 
 (defun annotating-methods (analysing-method)
   "Get all annotating methods for ANALYSING-METHOD"
