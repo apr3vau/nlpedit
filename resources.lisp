@@ -2,16 +2,15 @@
 
 ;; Images
 
-(eval-when (:compile-toplevel :load-toplevel)
-  (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)
-        for name in '(add-file open-file save cut copy paste setting name)
-        do (setf (get sym :data)
-                 (alexandria:read-file-into-byte-vector
-                  (merge-pathnames (format nil "res/icons8-~A-~A.png"
-                                           (string-downcase name)
-                                           #+windows 16
-                                           #+unix 48)
-                                   (asdf/system:system-source-directory 'nlpedit))))))
+(loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)
+      for name in '(add-file open-file save cut copy paste setting name)
+      do (setf (get sym :data)
+               (alexandria:read-file-into-byte-vector
+                (merge-pathnames (format nil "res/icons8-~A-~A.png"
+                                         (string-downcase name)
+                                         #+windows 16
+                                         #+unix 48)
+                                 (asdf/system:system-source-directory 'nlpedit)))))
 
 (defun register-images ()
   (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)

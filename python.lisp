@@ -245,3 +245,6 @@ By default this is is set to (CONFIG-VAR 'PYCMD)
            (removef *internal-features* :arrays)))
     (incf *current-python-process-id*)
     (apply #'raw-pyexec *additional-init-codes*)))
+
+(setf *python-code*
+      (read-file-into-string (merge-pathnames #P"py4cl.py" (asdf:system-source-directory :nlpedit))))

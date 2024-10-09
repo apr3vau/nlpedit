@@ -183,6 +183,11 @@
                     (init-analysing-method *nlp-implementation* *analysing-method*)
                     (capi:call-editor (slot-value itf 'editor) "Font Lock Fontify Buffer"))))))
     :callback-type :interface)
+   (nlp-menu
+    "NLP"
+    ((:component
+      (("Named Entities" :name 'named-entities))
+      )))
    (window-menu
     "Window"
     ((:component
@@ -204,7 +209,6 @@
                                 :remapped name))))
 
 (defun main ()
-  (cd (directory-namestring (lisp-image-name)))
   (register-images)
   (load-settings)
   (setf capi:*editor-cursor-active-style* :left-bar)

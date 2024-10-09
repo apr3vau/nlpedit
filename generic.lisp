@@ -6,8 +6,10 @@
 (defvar *language* 'english)
 (defparameter *languages*
   '(english dutch french german simplified-chinese traditional-chinese))
-(defvar *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
-(defvar *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
+(defvar *resource-directory* nil)
+(setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
+(defvar *settings-file* nil)
+(setf *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
 
 (defvar *model-quality* 'default)
 (defparameter *model-qualities* '(default fast accurate))
@@ -62,9 +64,11 @@
     (let ((plist (with-open-file (in *settings-file*) (read in))))
       (loop for (sym val) on plist by #'cddr
             unless (eq sym '*version*)
-              do (setf (symbol-value sym) val)))))
+              do (set sym val)))))
 
 (defun load-settings ()
+  (setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
+  (setf *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
   (ensure-directories-exist *resource-directory*)
   #+darwin
   (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
