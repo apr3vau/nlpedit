@@ -14,8 +14,10 @@
 (asdf:load-system :nlpedit)
 
 (deliver #'nlpedit:main
-         #+mswindows "~/common-lisp/nlpedit/nlpedit.exe"
-         #+darwin (create-macos-application-bundle "~/common-lisp/nlpedit/nlpedit.app")
+         #+mswindows (merge-pathnames (format nil "NLPEdit-v~A-windows.exe" nlpedit:*version*)
+                                      (asdf:system-source-directory :nlpedit))
+         #+darwin (create-macos-application-bundle (merge-pathnames (format nil "NLP\ Edit/NLPEdit-v~A-macOS.app" nlpedit:*version*)
+                                                                    (asdf:system-source-directory :nlpedit)))
          0
          :interface :capi
          :console :input)

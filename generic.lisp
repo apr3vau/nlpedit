@@ -376,3 +376,10 @@ Defining method for this to enable method-specific configuration via GUI")
         (setf (word-foreground word) (getf *specific-types-annotating-style* :foreground)
               (word-background word) (getf *specific-types-annotating-style* :background)))))
   sentences)
+
+(export '(*version*
+          *language* *model-quality* *nlp-implementation* *analysing-method* *annotating-method*
+          *font-family* *font-size* *font-weight* *font-slant*
+          *specific-types-annotating-style*
+          *specific-types-annotating-dependency-types*
+          *specific-types-annotating-part-of-speech-types*))
