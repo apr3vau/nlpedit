@@ -112,7 +112,7 @@
                                    (capi:element-interface list-panel)
                                    #'(setf capi:choice-selection) i list-panel)
                                   (setf (aref (aref name-status-array i) 1)
-                                        (if (funcall func) "✅ Done" "❌ Failed"))
+                                        (if (ignore-errors (funcall func)) "✅ Done" "❌ Failed"))
                                   (capi:apply-in-pane-process
                                    (capi:element-interface list-panel)
                                    #'capi:redisplay-collection-item list-panel (aref name-status-array i)))
