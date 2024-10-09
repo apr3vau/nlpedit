@@ -19,6 +19,7 @@
 
 (defparameter *stanza-resources-directory* nil)
 (setf *stanza-resources-directory* (merge-pathnames "stanza/" *resource-directory*))
+
 (defparameter *stanza-resource-version* "1.9.0")
 (defparameter *stanza-resource-url*
   "https://raw.githubusercontent.com/stanfordnlp/stanza-resources/main")

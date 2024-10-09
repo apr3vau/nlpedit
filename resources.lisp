@@ -10,7 +10,7 @@
                                          (string-downcase name)
                                          #+windows 16
                                          #+unix 48)
-                                 (asdf/system:system-source-directory 'nlpedit)))))
+                                 (asdf:system-source-directory 'nlpedit)))))
 
 (defun register-images ()
   (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)
