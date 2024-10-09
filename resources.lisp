@@ -3,8 +3,8 @@
 ;; Images
 
 (eval-when (:compile-toplevel :load-toplevel)
-  (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings)
-        for name in '(add-file open-file save cut copy paste setting)
+  (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)
+        for name in '(add-file open-file save cut copy paste setting name)
         do (setf (get sym :data)
                  (alexandria:read-file-into-byte-vector
                   (merge-pathnames (format nil "res/icons8-~A-~A.png"
@@ -14,7 +14,7 @@
                                    (asdf/system:system-source-directory 'nlpedit))))))
 
 (defun register-images ()
-  (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings)
+  (loop for sym in '(file-new file-open file-save edit-cut edit-copy edit-paste settings named-entities)
         do (gp:register-image-translation
             sym (make-instance 'gp:external-image :data (get sym :data) :type :png))))
 

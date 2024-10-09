@@ -90,8 +90,7 @@
           (capi:display-message "There is an error while application initialize:~%~A~%The application cannot continue." e)
           (quit))
         (invoke-debugger e)))))
-(setf *language* 'simplified-chinese)
-(install-dependencies)
+
 ;; Structures
 
 (defstruct word id text head upos deprel ner foreground background)

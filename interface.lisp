@@ -203,8 +203,6 @@
                                 :image name
                                 :remapped name))))
 
-; (capi:display (make-instance 'nlp-editor))
-
 (defun main ()
   (cd (directory-namestring (lisp-image-name)))
   (register-images)
