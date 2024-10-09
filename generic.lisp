@@ -2,7 +2,7 @@
 
 ;; Variables
 
-(defparameter *version* "0.2.1")
+(defparameter *version* "0.2.2")
 (defvar *language* 'english)
 (defparameter *languages*
   '(english dutch french german simplified-chinese traditional-chinese))
