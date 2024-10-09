@@ -67,8 +67,9 @@
               do (set sym val)))))
 
 (defun load-settings ()
-  (setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
-  (setf *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
+  (setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata))
+        *settings-file* (merge-pathnames "settings.sexp" *resource-directory*)
+        *stanza-resources-directory* (merge-pathnames "stanza/" *resource-directory*))
   (ensure-directories-exist *resource-directory*)
   #+darwin
   (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))

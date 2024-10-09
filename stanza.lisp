@@ -17,8 +17,8 @@
 (defparameter *stanza-model-quality-name-plist*
   '(default "default" fast "default_fast" accurate "default_accurate"))
 
-(defparameter *stanza-resources-directory*
-  (merge-pathnames "stanza/" *resource-directory*))
+(defparameter *stanza-resources-directory* nil)
+(setf *stanza-resources-directory* (merge-pathnames "stanza/" *resource-directory*))
 (defparameter *stanza-resource-version* "1.9.0")
 (defparameter *stanza-resource-url*
   "https://raw.githubusercontent.com/stanfordnlp/stanza-resources/main")
