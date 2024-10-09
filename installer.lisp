@@ -73,7 +73,8 @@
           (loop for ((nil . dep-processor) (nil . dep-model-name))
                   in (cdr (assoc "dependencies" model-field :test #'string=))
                 do (push-end-new (list dep-processor dep-model-name) models :test #'equal))
-          (push-end-new (list processor model-name) models :test #'equal)))
+          (when model-name
+            (push-end-new (list processor model-name) models :test #'equal))))
       (dolist (i models)
         (destructuring-bind (processor model-name) i
           (let* ((url (copy-seq (cdr (assoc "url" resources :test #'string=))))

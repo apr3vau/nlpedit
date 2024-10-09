@@ -74,7 +74,8 @@
    (language-option
     capi:option-pane
     :title "Language:" :title-position :left
-    :items *languages* :print-function #'string-capitalize
+    :items *languages* :selected-item *language*
+    :print-function #'string-capitalize
     :callback-type :data
     :selection-callback (lambda (data) (setf *language* data)))
    (model-quality-option

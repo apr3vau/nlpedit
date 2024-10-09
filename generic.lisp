@@ -2,6 +2,7 @@
 
 ;; Variables
 
+(defparameter *version* "0.2.1")
 (defvar *language* 'english)
 (defparameter *languages*
   '(english dutch french german simplified-chinese traditional-chinese))
@@ -47,8 +48,8 @@
                        :direction :output
                        :if-exists :supersede
                        :if-does-not-exist :create)
-    (loop for sym in '(*language*
-                       *model-quality* *nlp-implementation* *analysing-method* *annotating-method*
+    (loop for sym in '(*version*
+                       *language* *model-quality* *nlp-implementation* *analysing-method* *annotating-method*
                        *font-family* *font-size* *font-weight* *font-slant*
                        *specific-types-annotating-style*
                        *specific-types-annotating-dependency-types*
@@ -60,7 +61,8 @@
   (when (probe-file *settings-file*)
     (let ((plist (with-open-file (in *settings-file*) (read in))))
       (loop for (sym val) on plist by #'cddr
-            do (setf (symbol-value sym) val)))))
+            unless (eq sym '*version*)
+              do (setf (symbol-value sym) val)))))
 
 (defun load-settings ()
   (ensure-directories-exist *resource-directory*)
@@ -88,7 +90,8 @@
           (capi:display-message "There is an error while application initialize:~%~A~%The application cannot continue." e)
           (quit))
         (invoke-debugger e)))))
-
+(setf *language* 'simplified-chinese)
+(install-dependencies)
 ;; Structures
 
 (defstruct word id text head upos deprel ner foreground background)

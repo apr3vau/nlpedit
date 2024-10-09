@@ -43,27 +43,76 @@
 
 (defvar *stanza-pipelines* nil)
 
-(defstruct pipeline method quality object)
+(defstruct pipeline language method quality object)
 
 (defun call-pipeline (pipeline text)
   (pycall (pipeline-object pipeline) text))
 
 ;; Generic function methods
 
-(defmethod init-analysing-method ((impl (eql 'stanza)) method)
+(defmethod init-analysing-method ((impl (eql 'stanza)) (method (eql 'dependency)))
   (let ((pipeline (find method *stanza-pipelines* :key #'pipeline-method)))
     (when pipeline
-      (unless (eq (pipeline-quality pipeline) *model-quality*)
+      (unless (and (eq (pipeline-quality pipeline) *model-quality*)
+                   (eq (pipeline-language pipeline) *language*))
         (delete pipeline *stanza-pipelines*)
         (setq pipeline nil)))
     (unless pipeline
       (pyexec "import stanza")
       (let ((table (make-hash-table :test #'equal))
             (value (getf *stanza-model-quality-name-plist* *model-quality*)))
-        (dolist (processor (getf *stanza-method-processors-plist* method))
+        (dolist (processor (if (member *language* '(dutch french german))
+                               '("tokenize" "mwt" "pos" "lemma" "depparse")
+                             '("tokenize" "pos" "lemma" "depparse")))
           (setf (gethash processor table) value))
         (push (make-pipeline
-               :method method :quality *model-quality*
+               :language *language* :method method :quality *model-quality*
+               :object (pyeval (format nil "stanza.Pipeline('~A', model_dir='~A', processors=~A, package=None, download_method=None)"
+                                       (getf *stanza-lcodes-plist* *language*)
+                                       #+mswindows (ppcre:regex-replace-all "\\" (namestring *stanza-resources-directory*) "/")
+                                       #+darwin (namestring *stanza-resources-directory*)
+                                       (pythonize table))))
+              *stanza-pipelines*)))))
+
+(defmethod init-analysing-method ((impl (eql 'stanza)) (method (eql 'part-of-speech)))
+  (let ((pipeline (find method *stanza-pipelines* :key #'pipeline-method)))
+    (when pipeline
+      (unless (and (eq (pipeline-quality pipeline) *model-quality*)
+                   (eq (pipeline-language pipeline) *language*))
+        (delete pipeline *stanza-pipelines*)
+        (setq pipeline nil)))
+    (unless pipeline
+      (pyexec "import stanza")
+      (let ((table (make-hash-table :test #'equal))
+            (value (getf *stanza-model-quality-name-plist* *model-quality*)))
+        (dolist (processor (if (member *language* '(dutch french german))
+                               '("tokenize" "mwt" "pos")
+                             '("tokenize" "pos")))
+          (setf (gethash processor table) value))
+        (push (make-pipeline
+               :language *language* :method method :quality *model-quality*
+               :object (pyeval (format nil "stanza.Pipeline('~A', model_dir='~A', processors=~A, package=None, download_method=None)"
+                                       (getf *stanza-lcodes-plist* *language*)
+                                       #+mswindows (ppcre:regex-replace-all "\\" (namestring *stanza-resources-directory*) "/")
+                                       #+darwin (namestring *stanza-resources-directory*)
+                                       (pythonize table))))
+              *stanza-pipelines*)))))
+
+(defmethod init-analysing-method ((impl (eql 'stanza)) (method (eql 'named-entity-recognition)))
+  (let ((pipeline (find method *stanza-pipelines* :key #'pipeline-method)))
+    (when pipeline
+      (unless (and (eq (pipeline-quality pipeline) *model-quality*)
+                   (eq (pipeline-language pipeline) *language*))
+        (delete pipeline *stanza-pipelines*)
+        (setq pipeline nil)))
+    (unless pipeline
+      (pyexec "import stanza")
+      (let ((table (make-hash-table :test #'equal))
+            (value (getf *stanza-model-quality-name-plist* *model-quality*)))
+        (dolist (processor '("tokenize" "ner"))
+          (setf (gethash processor table) value))
+        (push (make-pipeline
+               :language *language* :method method :quality *model-quality*
                :object (pyeval (format nil "stanza.Pipeline('~A', model_dir='~A', processors=~A, package=None, download_method=None)"
                                        (getf *stanza-lcodes-plist* *language*)
                                        #+mswindows (ppcre:regex-replace-all "\\" (namestring *stanza-resources-directory*) "/")
