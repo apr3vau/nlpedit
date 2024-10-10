@@ -101,7 +101,7 @@
    (analysing-option
     capi:option-pane
     :title "Analysing Method:" :title-position :left
-    :items (analysing-methods) :selected-item *analysing-method*
+    :items *analysing-methods* :selected-item *analysing-method*
     :print-function #'string-capitalize
     :selection-callback (lambda (data itf)
                           (with-slots (annotating-option configure-layout) itf

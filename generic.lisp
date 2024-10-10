@@ -2,48 +2,32 @@
 
 ;; Variables
 
-(defparameter *version* "0.2.2")
-(defvar *language* 'english)
-(defparameter *languages*
-  '(english dutch french german simplified-chinese traditional-chinese))
-(defvar *resource-directory* nil)
-(setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata)))
-(defvar *settings-file* nil)
-(setf *settings-file* (merge-pathnames "settings.sexp" *resource-directory*))
+(defparameter *version*             (asdf:system-version (asdf:find-system :nlpedit)))
+(defvar       *resource-directory*  nil)
+(defvar       *settings-file*       nil)
+(defvar       *language*            'english)
+(defparameter *languages*           '(english dutch french german simplified-chinese traditional-chinese))
+(defparameter *languages-have-mwt*  '(dutch french german))
+(defvar       *model-quality*       'default)
+(defparameter *model-qualities*     '(default fast accurate))
+(defvar       *nlp-implementation*  'stanza)
+(defvar       *nlp-implementations* '(stanza))
+(defvar       *analysing-method*    'dependency)
+(defvar       *analysing-methods*   '(dependency part-of-speech named-entity-recognition))
+(defvar       *annotating-method*   'dependency-groups)
 
-(defvar *model-quality* 'default)
-(defparameter *model-qualities* '(default fast accurate))
+(defun init-variables ()
+  (setf *resource-directory*       (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata))
+        *settings-file*            (merge-pathnames "settings.sexp" *resource-directory*)
+        (config-var 'py4cl2:pycmd) (namestring (merge-pathnames #+mswindows "py/python.exe"
+                                                                #+darwin "py/bin/python3.10"
+                                                                *resource-directory*)))
+  #+darwin
+  (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
+        (environment-variable "PYTHONPATH") (namestring (merge-pathnames "py/" *resource-directory*)))
+  (ensure-directories-exist *resource-directory*))
 
-#+darwin
-(setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
-      (environment-variable "PYTHONPATH") (namestring (merge-pathnames "py/" *resource-directory*)))
-(setf (config-var 'py4cl2:pycmd) (namestring (merge-pathnames #+mswindows "py/python.exe"
-                                                              #+darwin "py/bin/python3.10"
-                                                              *resource-directory*)))
-
-(defvar *nlp-implementation* 'stanza)
-(defvar *analysing-method* 'dependency)
-(defvar *annotating-method* 'dependency-groups)
-
-(defun nlp-implementations ()
-  "Get all NLP backend implementations."
-  (delete-duplicates
-   (mapcar (lambda (i) (second (first (method-specializers i))))
-           (generic-function-methods #'analyse-sentences))))
-
-(defun analysing-methods ()
-  "Get all analysing methods (Dependency parsing, part-of-speech, etc.)"
-  (delete-duplicates
-   (mapcar (lambda (i) (second (second (method-specializers i))))
-           (generic-function-methods #'analyse-sentences))))
-
-(defun annotating-methods (analysing-method)
-  "Get all annotating methods for ANALYSING-METHOD"
-  (loop for method in (generic-function-methods #'annotate-sentences)
-        for spec = (method-specializers method)
-        when (member (car spec) (list (find-class t) (list 'eql analysing-method))
-                     :test #'equal)
-          collect (second (second spec))))
+(init-variables)
 
 (defun save-settings ()
   (with-open-file (out *settings-file*
@@ -67,16 +51,7 @@
               do (set sym val)))))
 
 (defun load-settings ()
-  (setf *resource-directory* (merge-pathnames #P"NLPEdit/" (sys:get-folder-path :appdata))
-        *settings-file* (merge-pathnames "settings.sexp" *resource-directory*)
-        *stanza-resources-directory* (merge-pathnames "stanza/" *resource-directory*))
-  (ensure-directories-exist *resource-directory*)
-  #+darwin
-  (setf (environment-variable "PYTHONHOME") (namestring (merge-pathnames "py/" *resource-directory*))
-        (environment-variable "PYTHONPATH") (namestring (merge-pathnames "py/" *resource-directory*)))
-  (setf (config-var 'py4cl2:pycmd) (namestring (merge-pathnames #+mswindows "py/python.exe"
-                                                                #+darwin "py/bin/python3.10"
-                                                                *resource-directory*)))
+  (init-variables)
   (handler-case
       (if (probe-file *settings-file*)
           (restore-settings)
@@ -91,10 +66,18 @@
           (init-analysing-method *nlp-implementation* *analysing-method*)))
     (error (e)
       (if (delivered-image-p)
-        (progn
-          (capi:display-message "There is an error while application initialize:~%~A~%The application cannot continue." e)
-          (quit))
+          (progn
+            (capi:display-message "There is an error while application initialize:~%~A~%The application cannot continue." e)
+            (quit))
         (invoke-debugger e)))))
+
+(defun annotating-methods (analysing-method)
+  "Get all annotating methods for ANALYSING-METHOD"
+  (loop for method in (generic-function-methods #'annotate-sentences)
+        for spec = (method-specializers method)
+        when (member (car spec) (list (find-class t) (list 'eql analysing-method))
+                     :test #'equal)
+          collect (second (second spec))))
 
 ;; Structures
 
