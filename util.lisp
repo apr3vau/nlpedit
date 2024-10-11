@@ -109,8 +109,13 @@
 (defmethod editor::text-pane-background-dark-p ((pane color-choice-output))
   (capi:top-level-interface-dark-mode-p (capi:element-interface pane)))
 
+;; 11Oct24: Use faster command to expand archive on Windows
+;; Reference: https://github.com/PowerShell/Microsoft.PowerShell.Archive/issues/32#issuecomment-1732375466
 (defun extract-zip (file destination)
   #+mswindows
-  (sys:run-shell-command (list "cmd" "/c" "powershell.exe" "Expand-Archive" (namestring file) (namestring destination)))
+  (sys:run-shell-command (list "cmd" "/c" "powershell.exe"
+                               "Add-Type -Assembly \"System.IO.Compression.Filesystem\";"
+                               (format nil "[System.IO.Compression.ZipFile]::ExtractToDirectory(\"~A \", \"~A \")"
+                                       (namestring file) (namestring destination))))
   #+darwin
   (sys:run-shell-command (list "/usr/bin/unzip" (namestring file) "-d" (namestring destination))))
