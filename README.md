@@ -13,6 +13,16 @@ Current functions:
 For Windows user, this application needs [Visual C++ library](https://aka.ms/vs/17/release/vc_redist.x64.exe) to run.
 Please download and install if you don't have it.
 
+### macOS
+
+For macOS user, the application has not signed yet, so you need some manual procedure to make it run.
+
+Assuming you've installed the application at `/Applications/nlpedit.app`, execute the following command in macOS `Terminal`:
+
+	xattr -d com.apple.quarantine /Applications/nlpedit.app
+
+Open the application, choose "Trust" in the Privacy settings, then the application should start. Tested under macOS Sonoma.
+
 ## Screenshots
 
 ### Natural Language Highlighting
